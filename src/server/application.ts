@@ -1,3 +1,6 @@
+import { createLanguageModel } from './model-provider.js';
+import { answerQuestion, readChatRequest } from './chat.js';
+import { chatLimits } from '../shared/chat.js';
 import { RequestError, readLimitedBody } from './http.js';
 import { SourceLibrary } from './source-library.js';
 import { sourceLimits } from '../shared/sources.js';
@@ -45,7 +48,14 @@ async function readLoginCode(request: IncomingMessage): Promise<string> {
   return body.code;
 }
 
-export function createApplication(configuration: Configuration) {
+export function createApplication(
+  configuration: Configuration,
+  providerTransport: typeof fetch = fetch,
+) {
+  const model = configuration.provider
+    ? createLanguageModel(configuration.provider, providerTransport)
+    : undefined;
+  let generating = false;
   const access = new WorkspaceAccess(configuration);
   const sources = new SourceLibrary(configuration.dataDirectory);
   const clientRoot = resolve('dist/client');
@@ -118,6 +128,78 @@ export function createApplication(configuration: Configuration) {
     if (pathname.startsWith('/api/')) {
       if (!access.isAuthenticated(request.headers.cookie)) {
         sendJson(response, 401, { error: 'Please unlock your workspace.' });
+        return;
+      }
+      if (request.method === 'GET' && pathname === '/api/chat/status') {
+        sendJson(
+          response,
+          200,
+          model
+            ? {
+                configured: true,
+                provider: configuration.provider?.kind,
+                sourceCharacters: chatLimits.sourceCharacters,
+              }
+            : { configured: false },
+        );
+        return;
+      }
+      if (request.method === 'POST' && pathname === '/api/chat') {
+        if (!model) {
+          throw new RequestError(
+            503,
+            'Configure AI_PROVIDER, AI_MODEL and AI_API_KEY in .env before asking a question.',
+          );
+        }
+        if (
+          request.headers['content-type']?.split(';')[0]?.trim() !==
+          'application/json'
+        ) {
+          throw new RequestError(415, 'Send your question as JSON.');
+        }
+        if (generating) {
+          throw new RequestError(
+            409,
+            'A response is already being generated. Cancel it or wait before sending another question.',
+          );
+        }
+        const bytes = await readLimitedBody(request, chatLimits.bodyBytes);
+        let input: unknown;
+        try {
+          input = JSON.parse(bytes.toString('utf8'));
+        } catch {
+          throw new RequestError(400, 'The conversation is not valid JSON.');
+        }
+        const chat = readChatRequest(input);
+        const source = await sources.get(chat.sourceId);
+        if (!access.isAuthenticated(request.headers.cookie)) {
+          throw new RequestError(401, 'Please unlock your workspace.');
+        }
+        if (generating) {
+          throw new RequestError(409, 'A response is already being generated.');
+        }
+        generating = true;
+        const controller = new AbortController();
+        const cancel = () => {
+          if (!response.writableEnded) {
+            controller.abort();
+          }
+        };
+        response.once('close', cancel);
+        try {
+          const text = await answerQuestion(
+            model,
+            source,
+            chat.messages,
+            controller.signal,
+          );
+          if (!response.destroyed) {
+            sendJson(response, 200, { text });
+          }
+        } finally {
+          response.off('close', cancel);
+          generating = false;
+        }
         return;
       }
       if (request.method === 'GET' && pathname === '/api/sources') {
@@ -226,6 +308,9 @@ export function createApplication(configuration: Configuration) {
     { requestTimeout: 10_000, headersTimeout: 10_000, maxHeaderSize: 8192 },
     (request, response) => {
       void handleRequest(request, response).catch((error: unknown) => {
+        if (response.destroyed) {
+          return;
+        }
         if (error instanceof RequestError) {
           sendJson(response, error.status, { error: error.message });
           return;

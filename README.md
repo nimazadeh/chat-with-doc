@@ -2,7 +2,7 @@
 
 A personal, local-first learning tool built with HTML5, modern CSS, and strict TypeScript. No frontend framework. Node.js serves the frontend and protects the private workspace.
 
-**Implemented:** ticket 1 (private access) and ticket 2 (local source library). You can save pasted text or text-based PDFs, inspect extracted text with page references, reopen after restart, and delete sources. AI conversations and learning history are not available yet.
+**Implemented:** tickets 1–3 (private access, local source library, provider-backed source questions). You can save pasted text or text-based PDFs, inspect extracted text with page references, reopen after restart, and delete sources. Source questions support Gemini and a defined OpenAI-compatible contract. Structured teaching and persistent learning history are later tickets.
 
 ## Run locally
 
@@ -28,7 +28,7 @@ npm run build
 npm start
 ```
 
-The production command also reads `.env`. Changing the access code requires restarting the server, which invalidates all sessions. No Gemini key is needed for tickets 1–2.
+The production command also reads `.env`. Changing the access code requires restarting the server, which invalidates all sessions. A provider key is optional for the library, but required for AI questions.
 
 ### Configuration
 
@@ -73,11 +73,11 @@ Sessions are opaque, server-side, expire after eight hours, and are lost on rest
 
 Five incorrect six-digit guesses block login globally for the remainder of a ten-minute window. This is deliberately single-owner and does not trust spoofable forwarded IP addresses. The trade-off is temporary denial of login; restarting also resets the in-memory limiter. It is not a distributed/public-facing abuse-defense system. A six-digit secret is weaker than a strong password.
 
-Only compiled `dist/client` assets are served. All private `/api/*` paths require a valid session. The only public authentication endpoints are login and a GET session-status check that returns just an authenticated boolean. State-changing requests require the exact configured Origin, with no permissive CORS. JSON login input is limited to 1 KiB; logout bodies use the same bound. Login codes, cookies and keys are not logged, embedded in HTML, or stored in localStorage. The client imports no server configuration; only non-secret source contracts and limits are shared. No analytics or model-provider calls exist. Uploaded content is handled locally as described below.
+Only compiled `dist/client` assets are served. All private `/api/*` paths require a valid session. The only public authentication endpoints are login and a GET session-status check that returns just an authenticated boolean. State-changing requests require the exact configured Origin, with no permissive CORS. JSON login input is limited to 1 KiB; logout bodies use the same bound. Login codes, cookies and keys are not logged, embedded in HTML, or stored in localStorage. The client imports no server configuration; only non-secret source contracts and limits are shared. No analytics exist. Importing a source is local; asking an AI question sends the selected source and conversation to the configured provider only after explicit consent.
 
-## Upcoming language behavior
+## Language and safe rendering
 
-English interface and English conversations are LTR. Future Persian conversation prose will be RTL; code blocks will always remain LTR with accessible copy-code buttons. These are explicit acceptance criteria for the conversation/teaching tickets, not a simulated chat feature in this release.
+The English interface is LTR. Conversation paragraphs use automatic direction (Persian RTL, English LTR); fenced code always stays LTR with a working copy button. Model prose and HTML are displayed as inert text, not interpreted HTML. Fenced code is the only structural Markdown support in this version; inline Markdown, links and images are not interpreted.
 
 Lucide provides icons; Inter is self-hosted through Fontsource (no external font request). Their package licenses are included in dependencies. `Folio` is a working UI name, not a user-approved permanent brand.
 
@@ -100,3 +100,23 @@ Source endpoints are protected by the same session and Origin policies as the wo
 - `DELETE /api/sources/:id` — remove the saved source.
 
 Fixtures are synthetic; real learning data stays out of Git. Browser tests use an isolated temporary data directory, never your `.data`. Tests cover actual PDF parsing, encryption/no-text errors, concurrent capacity enforcement, text persistence/restart/deletion, unsafe filenames/HTML, accessibility and responsive workflows.
+
+
+## Asking a source question
+
+Configure the provider **only in your local `.env`**, then restart. Never paste keys into chat or commit them. Leave provider settings unset to keep using the library without AI; the conversation explains how to configure it.
+
+- Gemini: set `AI_PROVIDER=gemini`, `AI_MODEL` to an available plain-text generateContent model (for example `gemini-2.5-flash` if your account has access), and `AI_API_KEY`. Requests use Google's HTTPS v1beta `models/<model>:generateContent` endpoint with `x-goog-api-key`, systemInstruction, text contents and at most 2,048 output tokens. `AI_BASE_URL` is not supported for Gemini.
+- OpenAI-compatible: set `AI_PROVIDER=openai-compatible`, `AI_MODEL`, `AI_API_KEY` and optionally `AI_BASE_URL` (default `https://api.openai.com/v1`). The exact supported subset is non-streaming `POST <base>/chat/completions` with Bearer authentication, string-content system/user/assistant messages, `max_tokens: 2048`, and a `choices[0].message.content` string with `finish_reason: stop`. Models requiring tools, multimodal content, reasoning-specific parameters, Responses API or other incompatible schemas are not promised. Local OpenAI-compatible services may use loopback HTTP and a non-secret placeholder key if their contract requires no authentication.
+- Custom base URLs require HTTPS unless loopback; no embedded credentials, query or fragment. Redirects are rejected rather than forwarding credentials elsewhere. You are responsible for trusting the server-side configured provider and its data-retention terms.
+- `AI_TIMEOUT_MS` defaults to 20,000 (allowed 100–25,000). Errors never return raw upstream bodies or keys. One generation runs per app instance; cancellation disconnects the request and aborts provider work. Cancellation is best effort and does not guarantee no billing.
+
+Open a source, choose **Ask about this source**, read the disclosure, agree to send content, then ask. The entire selected source and current conversation are sent on each turn. You can cancel, retry without losing your question, ask a follow-up or start a new conversation. Closing/reloading clears the in-memory transcript; no permanent chat sessions exist until ticket 5. There is no streaming yet.
+
+Context limits are explicit: source at most **24,000 characters**, user question **4,000**, history including the pending question **24,000**, at most **6 exchanges**. Request bodies and upstream responses are bounded to **128 KiB** and answers to **12,000 characters**. Longer sources/history and incomplete/oversized answers produce an error, never silent truncation. These are character budgets, not a token-count guarantee for every tokenizer; select a model with a sufficiently large context (64k tokens recommended). Long-source retrieval is deferred to ticket 6.
+
+The learning instructions label source material as untrusted reference data, separate it from system rules and request clear explanations, page references and honest uncertainty. This reduces risk but does **not** guarantee prompt-injection resistance or factual accuracy. No secrets are included in prompts. Structured pedagogy, exercises and learner goals belong to ticket 4.
+
+`GET /api/chat/status` exposes only readiness, provider kind and the public source-character cap; `POST /api/chat` accepts `{ sourceId, consent: true, messages: [{ role: "user" | "assistant", text }] }` with alternating turns ending in a user question. Both routes require a session; POST requires exact Origin and JSON. History is client-held and untrusted, so server rules/context bounds apply on every turn.
+
+Automated provider checks replace only the external network: Gemini's request/response contract uses a controlled transport; OpenAI-compatible and browser tests use real local upstream HTTP. Browser tests use synthetic output to verify rendering/cancellation/errors, not model intelligence. Live model calls were **not performed**: provider hosts are inaccessible from this workspace and a live test requires separate authorization. No real provider key was used or added to the preview.

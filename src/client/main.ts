@@ -1,3 +1,5 @@
+import chatDialog from './chat-dialog.html?raw';
+import { mountChat } from './chat';
 import sourceDialogs from './source-dialogs.html?raw';
 import { mountSourceLibrary } from './source-library';
 import './styles.css';
@@ -10,6 +12,7 @@ if (!root) {
   throw new Error('Application root is missing.');
 }
 const applicationRoot = root;
+let chat: ReturnType<typeof mountChat> | undefined;
 let disposeLibrary: (() => void) | undefined;
 let expiryCheck: number | undefined;
 let unlockTimer: number | undefined;
@@ -24,6 +27,7 @@ function requireElement<T extends HTMLElement>(selector: string): T {
 
 function showLogin(message = '', focus = false): void {
   disposeLibrary?.();
+  chat?.dispose();
   window.clearInterval(expiryCheck);
   window.clearTimeout(unlockTimer);
   // Only developer-owned templates enter innerHTML. Server and user text use textContent.
@@ -102,13 +106,21 @@ function showLogin(message = '', focus = false): void {
 
 function showWorkspace(): void {
   disposeLibrary?.();
-  applicationRoot.innerHTML = workspaceView() + sourceDialogs;
+  chat?.dispose();
+  applicationRoot.innerHTML = workspaceView() + sourceDialogs + chatDialog;
   applicationRoot.setAttribute('aria-busy', 'false');
   document.title = 'Folio — Personal workspace';
   renderIcons();
   requireElement('#workspace-title').focus();
-  disposeLibrary = mountSourceLibrary(applicationRoot, () =>
-    showLogin('Your session has ended. Unlock your workspace again.', true),
+  const onUnauthorized = () =>
+    showLogin('Your session has ended. Unlock your workspace again.', true);
+  chat = mountChat(applicationRoot, onUnauthorized);
+  disposeLibrary = mountSourceLibrary(
+    applicationRoot,
+    onUnauthorized,
+    (source) => {
+      void chat?.open(source);
+    },
   );
   const logout = requireElement<HTMLButtonElement>('#logout');
   logout.addEventListener('click', () => {

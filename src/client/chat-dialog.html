@@ -1,0 +1,65 @@
+<dialog id="learning-chat" class="chat-dialog" aria-labelledby="chat-title">
+  <div class="dialog-heading">
+    <div>
+      <p class="eyebrow">A little curiosity goes a long way</p>
+      <h2 id="chat-title">Ask about your source</h2>
+    </div>
+    <button id="close-chat" class="icon-button" aria-label="Close conversation">
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+  <p id="chat-source" class="source-hint" dir="auto"></p>
+  <p class="chat-disclosure">
+    Your selected source and conversation are sent to your configured AI
+    provider when you ask. AI can make mistakes; verify important claims against
+    the source.
+  </p>
+  <p id="chat-provider" class="source-hint" role="status">
+    Checking AI configuration…
+  </p>
+  <div
+    id="chat-messages"
+    class="chat-messages"
+    role="log"
+    aria-label="Conversation"
+    aria-live="polite"
+  ></div>
+  <form id="chat-form" novalidate>
+    <label for="chat-question">Your question</label>
+    <textarea
+      id="chat-question"
+      dir="auto"
+      maxlength="4000"
+      placeholder="What would you like to understand?"
+      aria-describedby="chat-limits"
+    ></textarea>
+    <p id="chat-limits" class="source-hint">
+      Up to 4,000 characters per question · sources up to 24,000 characters.
+      Longer sources aren’t truncated.
+    </p>
+    <label class="chat-consent"
+      ><input id="chat-consent" type="checkbox" />
+      <span
+        >I agree to send this source and conversation to my configured AI
+        provider.</span
+      ></label
+    >
+    <div class="chat-actions">
+      <button type="submit" id="send-question" class="button button-primary">
+        Send question <i data-lucide="arrow-right"></i>
+      </button>
+      <button type="button" id="cancel-question" class="button" hidden>
+        Cancel generation
+      </button>
+      <button type="button" id="new-conversation" class="button">
+        New conversation
+      </button>
+    </div>
+  </form>
+  <p id="chat-status" class="source-hint" role="status"></p>
+  <p id="chat-error" class="form-error" role="alert"></p>
+  <p class="source-hint chat-footnote">
+    Not saved yet. Closing or reloading clears this conversation. Cancelled
+    generations may still incur provider usage.
+  </p>
+</dialog>

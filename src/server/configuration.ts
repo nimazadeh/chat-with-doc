@@ -1,5 +1,8 @@
+import { readProviderConfiguration } from './model-provider.js';
+import type { ProviderConfiguration } from './model-provider.js';
 import { resolve, sep } from 'node:path';
 export interface Configuration {
+  provider?: ProviderConfiguration;
   dataDirectory: string;
   accessCode: string;
   origin: string;
@@ -58,6 +61,7 @@ export function readConfiguration(
   }
 
   return {
+    provider: readProviderConfiguration(environment),
     dataDirectory,
     accessCode,
     origin: url.origin,

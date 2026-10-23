@@ -79,3 +79,8 @@ Ticket 1 interface refinement: public GET session status returns only an authent
 ## Ticket 2 decisions
 
 Store extracted text and page metadata locally, not the original PDF bytes. Show that distinction before import. Limits: 50 sources; PDFs 10 MiB and 200 pages; each source at most 200,000 characters; text JSON body at most 1 MiB. PDF.js runs in a worker thread with one active import, 20-second timeout, and 256 MiB JS heap budget (not an OS sandbox). Atomic per-source JSON records use random UUID paths under ignored .data or an external DATA_DIR; one server process owns the directory. Deletion removes the record and references; no linked sessions exist yet. Preserve pasted code indentation. User superseded report.md: all subsequent reports are in chat and completed tasks end with a next-action question box.
+
+
+## Ticket 3 decisions
+
+Use server-side fetch adapters, no provider SDK dependency: Gemini v1beta generateContent, and the explicit non-streaming OpenAI-compatible chat/completions text contract. AI_PROVIDER, AI_MODEL, AI_API_KEY are optional until chat is enabled; AI_BASE_URL is OAI-only, HTTPS except loopback HTTP; redirects fail closed. No key/endpoint comes from browser input. Source context 24,000 characters; questions 4,000; history 24,000 and 6 exchanges; 128 KiB body/upstream cap; 12,000-character answer cap; 2,048 output tokens. No silent truncation. Twenty-second default timeout, at most one active generation, request disconnect aborts upstream. Require explicit per-conversation consent. Transcript is memory-only and closing/reloading clears it. Safe plain prose plus fenced LTR code/copy, with automatic prose direction. No live-provider test authorized/performed. Source prompt-injection defenses are best-effort, not a guarantee.

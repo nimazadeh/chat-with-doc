@@ -28,7 +28,9 @@ export async function requestJson(
           : { 'Content-Type': 'application/json' }),
       body:
         options.body ?? (body === undefined ? undefined : JSON.stringify(body)),
-      signal: controller.signal,
+      signal: options.signal
+        ? AbortSignal.any([controller.signal, options.signal])
+        : controller.signal,
     });
     if (!response.ok) {
       let message = 'The workspace could not be reached. Please try again.';

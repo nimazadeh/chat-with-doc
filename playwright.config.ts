@@ -50,15 +50,26 @@ export default defineConfig({
     },
     trace: 'retain-on-failure',
   },
-  webServer: {
-    command: 'node dist/server/index.js',
-    url: 'http://localhost:4173',
-    reuseExistingServer: false,
-    env: {
-      DATA_DIR: mkdtempSync(join(tmpdir(), 'folio-browser-data-')),
-      ACCESS_CODE: '026491',
-      PORT: '4173',
-      APP_ORIGIN: 'http://localhost:4173',
+  webServer: [
+    {
+      command: 'node --import tsx tests/fixtures/provider-server.ts',
+      port: 4184,
+      reuseExistingServer: false,
     },
-  },
+    {
+      command: 'node dist/server/index.js',
+      url: 'http://localhost:4173',
+      reuseExistingServer: false,
+      env: {
+        AI_PROVIDER: 'openai-compatible',
+        AI_MODEL: 'fixture-model',
+        AI_API_KEY: 'fixture-key',
+        AI_BASE_URL: 'http://127.0.0.1:4184/v1',
+        DATA_DIR: mkdtempSync(join(tmpdir(), 'folio-browser-data-')),
+        ACCESS_CODE: '026491',
+        PORT: '4173',
+        APP_ORIGIN: 'http://localhost:4173',
+      },
+    },
+  ],
 });

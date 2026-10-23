@@ -87,7 +87,8 @@
   <p id="import-status" class="source-hint" role="status"></p>
   <p class="local-note">
     <i data-lucide="shield-check"></i> Only extracted text is stored locally.
-    The original PDF is not retained. Nothing is sent to an AI provider.
+    The original PDF is not retained. Importing does not send content to an AI
+    provider. Asking a question does.
   </p>
 </dialog>
 <dialog
@@ -108,6 +109,9 @@
   <p id="preview-meta" class="source-hint"></p>
   <div id="preview-pages"></div>
   <div class="preview-footer">
+    <button id="ask-source" class="button button-primary" disabled>
+      Ask about this source
+    </button>
     <span>Extracted text · not an AI explanation</span
     ><button id="delete-source" class="button button-danger">
       <i data-lucide="trash-2"></i> Delete source

@@ -15,6 +15,6 @@ Vendored from https://github.com/mattpocock/skills/tree/main/skills/engineering 
 
 Skill files are reference instructions, not executable tool registrations. This environment has no Skill tool or independent subagent tool: apply the workflows directly and do not claim separate parallel reviewers ran. Two-axis review must remain explicit even if performed sequentially.
 
-The session branch is fixed. Never create prototype, research, integration, or worktree branches even when upstream skills suggest them. User permission gates override autonomous whole-spec implementation. User reports remain in report.md rather than skill-specific report formats. No automatic push, PR, or merge is required.
+The session branch is fixed. Never create prototype, research, integration, or worktree branches even when upstream skills suggest them. User permission gates override autonomous whole-spec implementation. User reports belong in chat, not report.md; completed work ends with a next-action question box. No automatic push, PR, or merge is required.
 
 Upstream references skills outside the requested engineering folder (for example grilling and writing-for-agents). These are not included here; do not claim to have installed or invoked those missing tools.

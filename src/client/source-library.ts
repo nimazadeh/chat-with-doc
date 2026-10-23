@@ -6,6 +6,7 @@ import type { LearningSource, SourceSummary } from '../shared/sources';
 export function mountSourceLibrary(
   root: HTMLElement,
   onUnauthorized: () => void,
+  onChat: (source: LearningSource) => void,
 ): () => void {
   let disposed = false;
   let saving = false;
@@ -49,6 +50,7 @@ export function mountSourceLibrary(
     element('#preview-meta').textContent = '';
     element('#preview-error').textContent = '';
     element<HTMLButtonElement>('#delete-source').disabled = true;
+    element<HTMLButtonElement>('#ask-source').disabled = true;
     previewDialog.showModal();
     try {
       const source = await requestJson(
@@ -63,6 +65,7 @@ export function mountSourceLibrary(
         );
       }
       selectedSource = source;
+      element<HTMLButtonElement>('#ask-source').disabled = false;
       element('#preview-title').textContent = source.title;
       element('#preview-meta').textContent =
         `${source.kind === 'pdf' ? 'PDF' : 'Pasted text'} · ${source.pageCount} ${source.pageCount === 1 ? 'page' : 'pages'} · ${source.characterCount.toLocaleString()} characters`;
@@ -178,6 +181,12 @@ export function mountSourceLibrary(
   deleteDialog.addEventListener('cancel', (event) => {
     if (deleting) {
       event.preventDefault();
+    }
+  });
+  element('#ask-source').addEventListener('click', () => {
+    if (selectedSource) {
+      previewDialog.close();
+      onChat(selectedSource);
     }
   });
   element('#add-source').addEventListener('click', openImport);
