@@ -492,3 +492,228 @@ test('client cancellation aborts upstream work, rejects concurrent generations, 
   expect(retry.status).toBe(200);
   expect((await retry.json()).text).toBe('Retry worked');
 });
+
+test('a beginner lesson uses the learner goal, prerequisites and one focused step without trusting preferences as rules', async () => {
+  const transport: typeof fetch = async (_url, options) => {
+    const request = JSON.parse(String(options?.body));
+    expect(request.messages[0].content).toContain('one focused step');
+    expect(request.messages[0].content).toContain('prerequisites');
+    expect(request.messages[0].content).toContain('Source-grounded');
+    expect(request.messages[0].content).not.toContain(
+      'Understand closures for callbacks',
+    );
+    expect(request.messages[1].content).toContain(
+      'Understand closures for callbacks',
+    );
+    expect(request.messages[1].content).toContain('beginner');
+    return Response.json({
+      choices: [
+        {
+          message: {
+            content:
+              'Source-grounded [page 1]: A closure retains lexical scope.\nSupplementary explanation: Imagine a function carrying a small notebook.',
+          },
+          finish_reason: 'stop',
+        },
+      ],
+    });
+  };
+  const { base, headers } = await setup(
+    {
+      AI_PROVIDER: 'openai-compatible',
+      AI_MODEL: 'fixture-model',
+      AI_API_KEY: 'fixture-key',
+    },
+    transport,
+  );
+  const saved = await fetch(`${base}/api/sources/text`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      title: 'Closures',
+      text: 'A closure retains lexical scope.',
+    }),
+  });
+  const source = await saved.json();
+  const answer = await fetch(`${base}/api/chat`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      sourceId: source.id,
+      consent: true,
+      messages: [{ role: 'user', text: 'Teach me closures' }],
+      teaching: {
+        goal: 'Understand closures for callbacks',
+        level: 'beginner',
+        action: 'explain',
+      },
+    }),
+  });
+  expect(answer.status).toBe(200);
+  expect((await answer.json()).text).toContain('Supplementary explanation');
+});
+
+test('does not present a provider citation to a page absent from the selected source', async () => {
+  const { base, headers } = await setup(
+    {
+      AI_PROVIDER: 'openai-compatible',
+      AI_MODEL: 'fixture-model',
+      AI_API_KEY: 'fixture-key',
+    },
+    async () =>
+      Response.json({
+        choices: [
+          {
+            message: {
+              content: 'Source-grounded [page 99]: an unsupported claim.',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      }),
+  );
+  const saved = await fetch(`${base}/api/sources/text`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ title: 'Scope', text: 'Lexical scope.' }),
+  });
+  const source = await saved.json();
+  const answer = await fetch(`${base}/api/chat`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      sourceId: source.id,
+      consent: true,
+      messages: [{ role: 'user', text: 'Explain' }],
+    }),
+  });
+  expect(answer.status).toBe(502);
+  expect((await answer.json()).error).toContain('page');
+});
+
+for (const action of ['simplify', 'practice', 'feedback'] as const) {
+  test(`non-programming ${action} preserves the exercise context and calibrated teaching instructions`, async () => {
+    const transport: typeof fetch = async (_url, options) => {
+      const input = JSON.parse(String(options?.body));
+      expect(input.messages[0].content).toContain(`Teaching mode: ${action}.`);
+      expect(input.messages[0].content).toContain(
+        'never fabricate references or certainty',
+      );
+      expect(input.messages[1].content).toContain('familiar');
+      expect(input.messages[1].content).toContain('Calculate savings interest');
+      expect(input.messages.at(-2).content).toContain('principal of 1000');
+      expect(input.messages.at(-1).content).toBe(
+        'I think the interest is 100.',
+      );
+      if (action === 'practice') {
+        expect(input.messages[0].content).toContain(
+          'Do not reveal the worked solution yet',
+        );
+      }
+      if (action === 'feedback') {
+        expect(input.messages[0].content).toContain(
+          'Do not give blanket praise or invented grades',
+        );
+      }
+      if (action === 'simplify') {
+        expect(input.messages[0].content).toContain(
+          'State the analogy’s limits',
+        );
+      }
+      return Response.json({
+        choices: [
+          {
+            message: {
+              content:
+                'Supplementary explanation: 1000 × 0.05 × 2 = 100, assuming a fixed principal and rate [page 1].',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      });
+    };
+    const { base, headers } = await setup(
+      {
+        AI_PROVIDER: 'openai-compatible',
+        AI_MODEL: 'fixture-model',
+        AI_API_KEY: 'fixture-key',
+      },
+      transport,
+    );
+    const saved = await fetch(`${base}/api/sources/text`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        title: 'Simple interest',
+        text: 'Simple interest is principal multiplied by annual rate and years.',
+      }),
+    });
+    const source = await saved.json();
+    const response = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        sourceId: source.id,
+        consent: true,
+        messages: [
+          { role: 'user', text: 'Give me an exercise' },
+          {
+            role: 'assistant',
+            text: 'For a principal of 1000, a 5% annual rate and 2 years, calculate simple interest.',
+          },
+          { role: 'user', text: 'I think the interest is 100.' },
+        ],
+        teaching: {
+          goal: 'Calculate savings interest',
+          level: 'familiar',
+          action,
+        },
+      }),
+    });
+    expect(response.status).toBe(200);
+    expect((await response.json()).text).toContain(
+      'assuming a fixed principal',
+    );
+  });
+}
+
+test('invalid goals, levels, modes and feedback without a previous lesson never reach the provider', async () => {
+  let calls = 0;
+  const { base, headers } = await setup(
+    {
+      AI_PROVIDER: 'gemini',
+      AI_MODEL: 'fixture-model',
+      AI_API_KEY: 'fixture-key',
+    },
+    async () => {
+      calls += 1;
+      return Response.json({});
+    },
+  );
+  const saved = await fetch(`${base}/api/sources/text`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ title: 'Scope', text: 'Lexical scope.' }),
+  });
+  const source = await saved.json();
+  for (const teaching of [
+    null,
+    { goal: 'x'.repeat(501), level: 'beginner', action: 'explain' },
+    { goal: 'Goal', level: 'root', action: 'explain' },
+    { goal: 'Goal', level: 'advanced', action: 'override-rules' },
+    { goal: 'Goal', level: 'beginner', action: 'feedback' },
+  ]) {
+    const response = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        sourceId: source.id,
+        consent: true,
+        messages: [{ role: 'user', text: 'Teach me' }],
+        teaching,
+      }),
+    });
+    expect(response.status).toBe(400);
+  }
+  expect(calls).toBe(0);
+});

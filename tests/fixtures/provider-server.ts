@@ -1,3 +1,4 @@
+import { teachingFixtureReply } from './teaching-lessons.js';
 import { createServer } from 'node:http';
 
 // The browser suite talks to a real HTTP upstream fixture, never a real model or personal API key.
@@ -14,6 +15,16 @@ createServer((request, response) => {
       response.end('{"error":"fixture-only"}');
       return;
     }
+    const teaching = input.messages[1]?.content.includes('Teaching:');
+    const mode =
+      input.messages[0]?.content.match(/Teaching mode: (\w+)\./)?.[1] ??
+      'explain';
+    const lesson = teachingFixtureReply(
+      input.messages[1]?.content.includes('Simple interest')
+        ? 'interest'
+        : 'closures',
+      mode,
+    );
     const reply = () => {
       response.setHeader('Content-Type', 'application/json');
       response.end(
@@ -21,7 +32,9 @@ createServer((request, response) => {
           choices: [
             {
               message: {
-                content: `${/[\u0600-\u06ff]/.test(question) ? 'یک توضیح روشن دربارهٔ محدوده.' : 'A clear explanation of lexical scope.'}\n\`\`\`js\nconst scope = true;\n\`\`\`\n<script>window.fixtureScriptRan = true;</script>`,
+                content: teaching
+                  ? lesson
+                  : `${/[\u0600-\u06ff]/.test(question) ? 'یک توضیح روشن دربارهٔ محدوده.' : 'A clear explanation of lexical scope.'}\n\`\`\`js\nconst scope = true;\n\`\`\`\n<script>window.fixtureScriptRan = true;</script>`,
               },
               finish_reason: 'stop',
             },

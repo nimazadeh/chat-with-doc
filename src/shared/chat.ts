@@ -11,3 +11,17 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
 }
+
+export const learningLevels = ['beginner', 'familiar', 'advanced'] as const;
+export const teachingActions = [
+  'explain',
+  'simplify',
+  'practice',
+  'feedback',
+] as const;
+export interface TeachingPreferences {
+  goal: string;
+  level: (typeof learningLevels)[number];
+  action: (typeof teachingActions)[number];
+}
+export const goalCharacterLimit = 500;

@@ -192,6 +192,7 @@ export function createApplication(
             source,
             chat.messages,
             controller.signal,
+            chat.teaching,
           );
           if (!response.destroyed) {
             sendJson(response, 200, { text });

@@ -2,7 +2,7 @@
 
 A personal, local-first learning tool built with HTML5, modern CSS, and strict TypeScript. No frontend framework. Node.js serves the frontend and protects the private workspace.
 
-**Implemented:** tickets 1–3 (private access, local source library, provider-backed source questions). You can save pasted text or text-based PDFs, inspect extracted text with page references, reopen after restart, and delete sources. Source questions support Gemini and a defined OpenAI-compatible contract. Structured teaching and persistent learning history are later tickets.
+**Implemented:** tickets 1–3 (private access, local source library, provider-backed source questions). You can save pasted text or text-based PDFs, inspect extracted text with page references, reopen after restart, and delete sources. Source questions support Gemini and a defined OpenAI-compatible contract. Guided-teaching controls are implemented; live-model human quality evaluation is pending. Persistent learning history is a later ticket.
 
 ## Run locally
 
@@ -77,7 +77,7 @@ Only compiled `dist/client` assets are served. All private `/api/*` paths requir
 
 ## Language and safe rendering
 
-The English interface is LTR. Conversation paragraphs use automatic direction (Persian RTL, English LTR); fenced code always stays LTR with a working copy button. Model prose and HTML are displayed as inert text, not interpreted HTML. Fenced code is the only structural Markdown support in this version; inline Markdown, links and images are not interpreted.
+The English interface is LTR. Conversation paragraphs containing Persian use RTL; other paragraphs use LTR; fenced code always stays LTR with a working copy button. Model prose and HTML are displayed as inert text, not interpreted HTML. Fenced code is the only structural Markdown support in this version; inline backticks create inert LTR terms; URLs, ASCII terms, math and recognized page markers are directionally isolated, not clickable links. Other Markdown, HTML and images are not interpreted.
 
 Lucide provides icons; Inter is self-hosted through Fontsource (no external font request). Their package licenses are included in dependencies. `Folio` is a working UI name, not a user-approved permanent brand.
 
@@ -115,8 +115,21 @@ Open a source, choose **Ask about this source**, read the disclosure, agree to s
 
 Context limits are explicit: source at most **24,000 characters**, user question **4,000**, history including the pending question **24,000**, at most **6 exchanges**. Request bodies and upstream responses are bounded to **128 KiB** and answers to **12,000 characters**. Longer sources/history and incomplete/oversized answers produce an error, never silent truncation. These are character budgets, not a token-count guarantee for every tokenizer; select a model with a sufficiently large context (64k tokens recommended). Long-source retrieval is deferred to ticket 6.
 
-The learning instructions label source material as untrusted reference data, separate it from system rules and request clear explanations, page references and honest uncertainty. This reduces risk but does **not** guarantee prompt-injection resistance or factual accuracy. No secrets are included in prompts. Structured pedagogy, exercises and learner goals belong to ticket 4.
+The learning instructions label source material as untrusted reference data, separate it from system rules and request clear explanations, page references and honest uncertainty. This reduces risk but does **not** guarantee prompt-injection resistance or factual accuracy. No secrets are included in prompts. Guided-teaching controls, exercises and learner goals are described below.
 
 `GET /api/chat/status` exposes only readiness, provider kind and the public source-character cap; `POST /api/chat` accepts `{ sourceId, consent: true, messages: [{ role: "user" | "assistant", text }] }` with alternating turns ending in a user question. Both routes require a session; POST requires exact Origin and JSON. History is client-held and untrusted, so server rules/context bounds apply on every turn.
 
 Automated provider checks replace only the external network: Gemini's request/response contract uses a controlled transport; OpenAI-compatible and browser tests use real local upstream HTTP. Browser tests use synthetic output to verify rendering/cancellation/errors, not model intelligence. Live model calls were **not performed**: provider hosts are inaccessible from this workspace and a live test requires separate authorization. No real provider key was used or added to the preview.
+
+
+## Guided teaching (ticket 4)
+
+Expand **Learning preferences** to set an optional goal (500 characters) and familiarity: beginner, familiar or advanced. Preferences are sent to the provider with each question and clear on closing/reload, like the unsaved conversation. A new conversation clears messages but keeps the current goal/level while the dialog stays open.
+
+**Response mode** selects a focused step-by-step explanation, a simpler version of the previous answer, one practice question, or feedback on your attempt. Simplify/practice can prepare a short prompt when the question is blank, using the previous learner language (or goal language initially); feedback requires your written attempt and a previous turn. You can always type a more specific request. All modes retain the same consent, source/context caps, cancellation and error behavior.
+
+Teaching rules request appropriate prerequisites, plain-language intuition, a concrete example, one small understanding check, analogy limits, and specific constructive feedback rather than invented grades. They explicitly support non-programming subjects. Goals/levels are untrusted data, not interpolated into system rules. The server chooses mode instructions from a fixed whitelist.
+
+The provider is instructed to label source-grounded claims and supplementary explanations separately, admit missing evidence and avoid fake references. Recognized `[page N]` / `[صفحه N]` markers outside fenced code are rejected if the page does not exist (including Persian/Arabic digits). This is a structural guard only: an existing page can still be cited incorrectly, and other citation syntax may escape the check. Verify claims against the original source. No code is executed; review copied code before running it.
+
+The repeatable human rubric is in `docs/evaluation/teaching.md`: closures/callbacks and simple interest, with advanced/beginner variants and incorrect/correct attempts. Curated fixture lessons were manually checked for reference clarity and arithmetic; deterministic HTTP/browser tests verify profile/mode contracts and the learning flow. **Real provider teaching quality remains unverified** until an authorized live run and human review. Ticket 4 therefore remains awaiting human evaluation, rather than being declared fully accepted from fixture output alone.

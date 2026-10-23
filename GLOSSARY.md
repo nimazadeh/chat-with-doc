@@ -20,3 +20,10 @@ _Avoid_: Tutor (the learning behavior should not be tied to the endpoint).
 
 **Access code**: The private six-digit value used to enter the workspace; not a time-based or one-time code.
 _Avoid_: OTP.
+
+
+**Learning goal**: The learner’s desired understanding or practical outcome, used to focus a lesson rather than treated as an instruction override.
+
+**Familiarity**: Self-reported prior knowledge of the current topic: beginner, familiar or advanced; not an assessed grade.
+
+**Supplementary explanation**: A model-provided example, analogy or outside knowledge distinguished from claims grounded in the selected source.

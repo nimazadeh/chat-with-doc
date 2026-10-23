@@ -23,7 +23,9 @@ for (const width of [375, 768, 1440]) {
       .getByRole('button', { name: new RegExp(`Chat fixture ${width}`) })
       .click();
     await page.getByRole('button', { name: 'Ask about this source' }).click();
-    await expect(page.getByText(/sent to your configured/)).toBeVisible();
+    await expect(page.locator('.chat-disclosure')).toContainText(
+      'configured AI provider',
+    );
     await page.getByLabel('Your question').fill('توضیح بده');
     await page.getByRole('button', { name: 'Send question' }).click();
     await expect(page.locator('#chat-error')).toContainText('Confirm');
@@ -34,7 +36,7 @@ for (const width of [375, 768, 1440]) {
     );
     await expect(
       page.locator('.message-assistant .message-prose').first(),
-    ).toHaveAttribute('dir', 'auto');
+    ).toHaveAttribute('dir', 'rtl');
     expect(
       await page
         .locator('.message-assistant .message-prose')
@@ -49,9 +51,21 @@ for (const width of [375, 768, 1440]) {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.getByRole('button', { name: 'Copy code' }).click();
     await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
       'const scope = true;',
     );
+    if (width === 375) {
+      await page.evaluate(() => {
+        navigator.clipboard.writeText = async () => {
+          throw new DOMException('Permission denied', 'NotAllowedError');
+        };
+      });
+      await page.getByRole('button', { name: 'Copied', exact: true }).click();
+      await expect(page.locator('.copy-feedback')).toContainText('Copy failed');
+      await expect(
+        page.getByRole('button', { name: 'Copy unavailable — select code' }),
+      ).toBeVisible();
+    }
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
     expect(
       await page.evaluate(

@@ -1485,3 +1485,71 @@ dialog code {
     padding-inline: 12px;
   }
 }
+
+.learning-preferences {
+  border: 1px solid #ddd4e7;
+  border-radius: 8px;
+  margin-block: 6px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #51415e;
+}
+.learning-preferences summary {
+  cursor: pointer;
+  font-weight: 550;
+}
+.preferences-fields {
+  padding-block-start: 10px;
+}
+.preferences-fields label {
+  display: block;
+  margin-block: 10px 6px;
+  font-size: 11px;
+}
+.chat-dialog input:not([type='checkbox']),
+.chat-dialog select {
+  inline-size: 100%;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid #c7bbd1;
+  border-radius: 7px;
+  background: #fff;
+  color: #30233c;
+  padding: 10px;
+  min-block-size: 40px;
+}
+.learning-mode {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.learning-mode label {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.learning-mode select {
+  flex: 1;
+  min-inline-size: 0;
+}
+.chat-dialog #mode-hint {
+  font-size: 10px;
+  margin-block: 6px 10px;
+}
+.copy-feedback {
+  font-size: 10px;
+  display: inline-block;
+  margin-inline-start: 8px;
+  color: #68517f;
+}
+.copy-feedback:empty {
+  display: none;
+}
+.chat-dialog .inline-code {
+  font-size: 0.9em;
+  background: #eae5ef;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.message-prose bdi {
+  unicode-bidi: isolate;
+}

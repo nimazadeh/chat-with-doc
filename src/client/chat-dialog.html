@@ -10,22 +10,59 @@
   </div>
   <p id="chat-source" class="source-hint" dir="auto"></p>
   <p class="chat-disclosure">
-    Your selected source and conversation are sent to your configured AI
-    provider when you ask. AI can make mistakes; verify important claims against
-    the source.
+    Questions send your source, learning preferences and chat to your configured
+    AI provider. Verify AI answers against the source.
   </p>
   <p id="chat-provider" class="source-hint" role="status">
     Checking AI configuration…
   </p>
+  <details class="learning-preferences" id="learning-preferences">
+    <summary>Learning preferences</summary>
+    <div class="preferences-fields">
+      <label for="learning-goal">Learning goal</label>
+      <input
+        id="learning-goal"
+        form="chat-form"
+        maxlength="500"
+        dir="auto"
+        placeholder="What would you like to understand or do?"
+        aria-describedby="goal-hint"
+      />
+      <p id="goal-hint" class="source-hint">
+        Optional · up to 500 characters. Shared with your AI provider.
+      </p>
+      <label for="learning-level">Familiarity</label>
+      <select id="learning-level" form="chat-form">
+        <option value="beginner">Beginner — start with the foundations</option>
+        <option value="familiar">Familiar — I know the basics</option>
+        <option value="advanced">
+          Advanced — focus on depth and edge cases
+        </option>
+      </select>
+    </div>
+  </details>
   <div
     id="chat-messages"
+    tabindex="0"
     class="chat-messages"
     role="log"
     aria-label="Conversation"
     aria-live="polite"
   ></div>
   <form id="chat-form" novalidate>
-    <label for="chat-question">Your question</label>
+    <div class="learning-mode">
+      <label for="response-mode">Response mode</label>
+      <select id="response-mode" aria-describedby="mode-hint">
+        <option value="explain">Explain step by step</option>
+        <option value="simplify">Make it simpler</option>
+        <option value="practice">Give me a practice question</option>
+        <option value="feedback">Feedback on my attempt</option>
+      </select>
+    </div>
+    <p id="mode-hint" class="source-hint">
+      One concept, an example and a small understanding check.
+    </p>
+    <label for="chat-question">Your question or answer</label>
     <textarea
       id="chat-question"
       dir="auto"
@@ -46,7 +83,8 @@
     >
     <div class="chat-actions">
       <button type="submit" id="send-question" class="button button-primary">
-        Send question <i data-lucide="arrow-right"></i>
+        <span id="chat-send-label">Send question</span>
+        <i data-lucide="arrow-right"></i>
       </button>
       <button type="button" id="cancel-question" class="button" hidden>
         Cancel generation

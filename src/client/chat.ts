@@ -1,54 +1,8 @@
+import { renderMessage } from './messages';
 import { ApiError, requestJson } from './api';
 import { chatLimits } from '../shared/chat';
-import type { ChatMessage } from '../shared/chat';
+import type { ChatMessage, TeachingPreferences } from '../shared/chat';
 import type { LearningSource } from '../shared/sources';
-
-function renderMessage(message: ChatMessage): HTMLElement {
-  const article = document.createElement('article');
-  article.className = `chat-message message-${message.role}`;
-  const author = document.createElement('h3');
-  author.textContent = message.role === 'user' ? 'You' : 'Learning assistant';
-  article.append(author);
-  // Only fenced code is interpreted structurally. All provider prose and markup stay inert text.
-  const segments = message.text.split(/```[^\n`]*\n([\s\S]*?)(?:```|$)/g);
-  for (const [index, segment] of segments.entries()) {
-    if (index % 2 === 0) {
-      if (!segment) {
-        continue;
-      }
-      const prose = document.createElement('p');
-      prose.className = 'message-prose';
-      prose.dir = 'auto';
-      prose.textContent = segment;
-      article.append(prose);
-    } else {
-      const block = document.createElement('div');
-      block.className = 'code-block';
-      const copy = document.createElement('button');
-      copy.type = 'button';
-      copy.className = 'button copy-code';
-      copy.textContent = 'Copy code';
-      const pre = document.createElement('pre');
-      pre.dir = 'ltr';
-      const code = document.createElement('code');
-      code.textContent = segment.replace(/\n$/, '');
-      pre.append(code);
-      copy.addEventListener('click', () => {
-        void navigator.clipboard
-          .writeText(code.textContent ?? '')
-          .then(() => {
-            copy.textContent = 'Copied';
-          })
-          .catch(() => {
-            copy.textContent = 'Copy unavailable — select code';
-          });
-      });
-      block.append(copy, pre);
-      article.append(block);
-    }
-  }
-  return article;
-}
 
 export function mountChat(root: HTMLElement, onUnauthorized: () => void) {
   const element = <T extends HTMLElement>(selector: string): T => {
@@ -59,6 +13,10 @@ export function mountChat(root: HTMLElement, onUnauthorized: () => void) {
     return found;
   };
   const dialog = element<HTMLDialogElement>('#learning-chat');
+  const goal = element<HTMLInputElement>('#learning-goal');
+  const level = element<HTMLSelectElement>('#learning-level');
+  const mode = element<HTMLSelectElement>('#response-mode');
+  const preferences = element<HTMLDetailsElement>('#learning-preferences');
   const form = element<HTMLFormElement>('#chat-form');
   const question = element<HTMLTextAreaElement>('#chat-question');
   const consent = element<HTMLInputElement>('#chat-consent');
@@ -79,6 +37,9 @@ export function mountChat(root: HTMLElement, onUnauthorized: () => void) {
     form.setAttribute('aria-busy', String(busy));
     send.disabled = busy || !ready;
     question.disabled = busy;
+    goal.disabled = busy;
+    level.disabled = busy;
+    mode.disabled = busy;
     consent.disabled = busy;
     restart.disabled = busy;
     cancel.hidden = !busy;
@@ -89,6 +50,8 @@ export function mountChat(root: HTMLElement, onUnauthorized: () => void) {
     question.value = '';
     status.textContent = '';
     error.textContent = '';
+    mode.value = 'explain';
+    updateMode();
   }
   function showError(reason: unknown): void {
     if (reason instanceof ApiError && reason.status === 401) {
@@ -106,6 +69,9 @@ export function mountChat(root: HTMLElement, onUnauthorized: () => void) {
     source = undefined;
     clear();
     element('#chat-source').textContent = '';
+    goal.value = '';
+    level.value = 'beginner';
+    preferences.open = false;
   });
   element('#close-chat').addEventListener('click', () => dialog.close());
   cancel.addEventListener('click', () => controller?.abort());
@@ -113,6 +79,34 @@ export function mountChat(root: HTMLElement, onUnauthorized: () => void) {
     clear();
     question.focus();
   });
+  function updateMode(): void {
+    const labels = {
+      explain: 'Send question',
+      simplify: 'Explain more simply',
+      practice: 'Give me an exercise',
+      feedback: 'Check my answer',
+    };
+    const hints = {
+      explain: 'One concept, an example and a small understanding check.',
+      simplify:
+        'A simpler version of the previous explanation. A question is optional.',
+      practice:
+        'One small exercise without the solution. Tell us what you want to practise, or leave the question blank.',
+      feedback:
+        'Write your attempt below. Feedback uses the exercise and conversation above.',
+    };
+    const placeholders = {
+      explain: 'What would you like to understand?',
+      simplify: 'Optional: what part still feels unclear?',
+      practice: 'Optional: what would you like to practise?',
+      feedback: 'Write your attempt and explain your reasoning…',
+    };
+    const action = mode.value as TeachingPreferences['action'];
+    question.placeholder = placeholders[action];
+    element('#chat-send-label').textContent = labels[action];
+    element('#mode-hint').textContent = hints[action];
+  }
+  mode.addEventListener('change', updateMode);
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (controller || !source || !ready) {
@@ -125,7 +119,34 @@ export function mountChat(root: HTMLElement, onUnauthorized: () => void) {
       consent.focus();
       return;
     }
-    const text = question.value.trim();
+    const action = mode.value as TeachingPreferences['action'];
+    const persian = /[\u0600-\u06ff]/.test(
+      messages.filter((message) => message.role === 'user').at(-1)?.text ??
+        goal.value,
+    );
+    let text = question.value.trim();
+    if (!text && action === 'simplify') {
+      text = persian
+        ? 'لطفاً توضیح قبلی را ساده‌تر و با یک مثال روشن توضیح بده.'
+        : 'Please explain the previous idea more simply with a concrete example.';
+    }
+    if (!text && action === 'practice') {
+      text = persian
+        ? 'لطفاً یک تمرین کوتاه برای این مفهوم بده؛ پاسخ را هنوز نگو.'
+        : 'Please give me one small exercise about this concept, without the solution yet.';
+    }
+    if (action === 'feedback' && !text) {
+      error.textContent = 'Write your attempt before asking for feedback.';
+      question.focus();
+      return;
+    }
+    if (
+      (action === 'simplify' || action === 'feedback') &&
+      messages.length === 0
+    ) {
+      error.textContent = 'Ask for an explanation or exercise first.';
+      return;
+    }
     if (!text || text.length > chatLimits.questionCharacters) {
       error.textContent = 'Ask a question between 1 and 4,000 characters.';
       question.focus();
@@ -148,7 +169,12 @@ export function mountChat(root: HTMLElement, onUnauthorized: () => void) {
     status.textContent = 'Thinking about your question…';
     void requestJson(
       '/api/chat',
-      { sourceId: source.id, consent: true, messages: pending },
+      {
+        sourceId: source.id,
+        consent: true,
+        messages: pending,
+        teaching: { goal: goal.value, level: level.value, action },
+      },
       { signal: requestController.signal },
     )
       .then((result) => {
