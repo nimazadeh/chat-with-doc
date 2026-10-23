@@ -1,6 +1,6 @@
 # Personal learning tickets
 
-Plan approved; ticket 01 explicitly authorized and completed. Tickets 02–07 await separate user authorization. See [spec](spec.md).
+Plan approved; tickets 01 and 02 explicitly authorized and completed. Tickets 03–07 await separate user authorization. See [spec](spec.md).
 
 - [01: ورود امن به فضای شخصی](issues/01-secure-entry.md)
 - [02: افزودن و مدیریت منابع آموزشی](issues/02-source-library.md)

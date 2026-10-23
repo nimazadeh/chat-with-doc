@@ -32,7 +32,7 @@ for (const width of [375, 768, 1440]) {
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Add your first source' }),
-    ).toBeDisabled();
+    ).toBeEnabled();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,

@@ -59,21 +59,20 @@ export function workspaceView(): string {
       <header class="site-header">${brand}<span class="workspace-breadcrumb">Personal workspace <i data-lucide="chevron-right"></i> Overview</span><button id="logout" class="button button-quiet"><i data-lucide="log-out"></i><span>Lock workspace</span></button></header>
       <main id="main-content" class="workspace-layout">
         <aside class="workspace-sidebar" aria-label="Workspace overview">
-          <p class="sidebar-label">WORKSPACE</p><span class="sidebar-current"><i data-lucide="book-open"></i> Overview</span>
+          <p class="sidebar-label">WORKSPACE</p><span class="sidebar-current"><i data-lucide="book-open"></i> Sources</span>
           <div class="sidebar-note"><i data-lucide="shield-check"></i><strong>Just for you.</strong><p>Your personal space.<br />One idea at a time.</p></div>
         </aside>
         <section class="workspace-content" aria-labelledby="workspace-title">
           <p class="eyebrow"><span class="status-dot"></span> YOUR WORKSPACE IS UNLOCKED</p>
           <h1 id="workspace-title" tabindex="-1">Room for your next<br /><span>“I get it.”</span></h1>
           <p class="workspace-description">Every great learning session starts with a little curiosity.</p>
-          <div class="empty-workspace">
-            <span class="empty-icon"><i data-lucide="book-open"></i></span>
-            <span class="feature-tag">COMING IN THE NEXT STEP</span>
-            <h2>A home for what you’re learning.</h2>
-            <p>Your source library will live here. PDF uploads and text sources<br class="desktop-break" /> are not available in this version yet.</p>
-            <button class="button button-disabled" disabled><i data-lucide="plus"></i> Add your first source</button>
-            <span class="empty-footnote">Nothing is uploaded or sent to an AI provider.</span>
+          <div class="library-toolbar">
+            <h2>Your library <span id="source-count" class="source-count">0 / 50</span></h2>
+            <button id="add-source" class="button button-accent"><i data-lucide="plus"></i> Add source</button>
           </div>
+          <p id="library-status" role="status" class="library-status">Opening your library…</p>
+          <div id="source-list" class="source-list"></div>
+          <button id="retry-library" class="button button-quiet" hidden>Try loading again</button>
           <div class="workspace-bottom"><span><i data-lucide="lock-keyhole"></i> Private access is active</span><span>Source library → guided learning → your progress</span></div>
           <p id="workspace-error" class="workspace-error" role="alert"></p>
         </section>

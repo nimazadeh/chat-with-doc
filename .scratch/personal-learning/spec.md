@@ -74,3 +74,8 @@ Seven approved vertical tickets live in issues/, in dependency order. They inclu
 Use Lucide icons. Persian prose must use RTL and English prose LTR, while code blocks always use LTR with a dedicated copy-code button. Implement conversation rendering and copying with the relevant chat/teaching tickets, not with the login ticket. Copy feedback and clipboard failures must be accessible. Keep the source readable for the next human maintainer.
 
 Ticket 1 interface refinement: public GET session status returns only an authenticated boolean, avoiding an expected 401 console error on the entry page. It grants no private data access. All data endpoints remain protected.
+
+
+## Ticket 2 decisions
+
+Store extracted text and page metadata locally, not the original PDF bytes. Show that distinction before import. Limits: 50 sources; PDFs 10 MiB and 200 pages; each source at most 200,000 characters; text JSON body at most 1 MiB. PDF.js runs in a worker thread with one active import, 20-second timeout, and 256 MiB JS heap budget (not an OS sandbox). Atomic per-source JSON records use random UUID paths under ignored .data or an external DATA_DIR; one server process owns the directory. Deletion removes the record and references; no linked sessions exist yet. Preserve pasted code indentation. User superseded report.md: all subsequent reports are in chat and completed tasks end with a next-action question box.

@@ -1,4 +1,6 @@
+import { resolve, sep } from 'node:path';
 export interface Configuration {
+  dataDirectory: string;
   accessCode: string;
   origin: string;
   port: number;
@@ -41,7 +43,22 @@ export function readConfiguration(
     throw new Error('Non-loopback APP_ORIGIN requires HTTPS.');
   }
 
+  const dataDirectory = resolve(environment.DATA_DIR ?? '.data');
+  const repositoryRoot = resolve('.');
+  const ignoredDataDirectory = resolve('.data');
+  if (
+    (dataDirectory === repositoryRoot ||
+      dataDirectory.startsWith(`${repositoryRoot}${sep}`)) &&
+    dataDirectory !== ignoredDataDirectory &&
+    !dataDirectory.startsWith(`${ignoredDataDirectory}${sep}`)
+  ) {
+    throw new Error(
+      'DATA_DIR must be outside the repository or inside its ignored .data directory.',
+    );
+  }
+
   return {
+    dataDirectory,
     accessCode,
     origin: url.origin,
     port,

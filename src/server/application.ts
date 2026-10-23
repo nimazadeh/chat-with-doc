@@ -1,3 +1,6 @@
+import { RequestError, readLimitedBody } from './http.js';
+import { SourceLibrary } from './source-library.js';
+import { sourceLimits } from '../shared/sources.js';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -16,40 +19,6 @@ function sendJson(
   response.end(JSON.stringify(body));
 }
 
-class RequestError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-
-function readLimitedBody(request: IncomingMessage): Promise<string> {
-  return new Promise<string>((resolveBody, reject) => {
-    const chunks: Buffer[] = [];
-    let bytes = 0;
-    let tooLarge = false;
-    request.on('data', (chunk: Buffer) => {
-      bytes += chunk.length;
-      if (bytes > 1024) {
-        tooLarge = true;
-        chunks.length = 0;
-        reject(new RequestError(413, 'The request is too large.'));
-      } else if (!tooLarge) {
-        chunks.push(chunk);
-      }
-    });
-    request.on('end', () =>
-      resolveBody(Buffer.concat(chunks).toString('utf8')),
-    );
-    request.on('error', reject);
-    request.on('aborted', () =>
-      reject(new RequestError(400, 'The request was interrupted.')),
-    );
-  });
-}
-
 async function readLoginCode(request: IncomingMessage): Promise<string> {
   if (
     request.headers['content-type']?.split(';')[0]?.trim() !==
@@ -60,7 +29,7 @@ async function readLoginCode(request: IncomingMessage): Promise<string> {
   const bodyText = await readLimitedBody(request);
   let body: unknown;
   try {
-    body = JSON.parse(bodyText);
+    body = JSON.parse(bodyText.toString('utf8'));
   } catch {
     throw new RequestError(400, 'Enter a six-digit access code.');
   }
@@ -78,6 +47,7 @@ async function readLoginCode(request: IncomingMessage): Promise<string> {
 
 export function createApplication(configuration: Configuration) {
   const access = new WorkspaceAccess(configuration);
+  const sources = new SourceLibrary(configuration.dataDirectory);
   const clientRoot = resolve('dist/client');
 
   async function handleRequest(
@@ -148,6 +118,59 @@ export function createApplication(configuration: Configuration) {
     if (pathname.startsWith('/api/')) {
       if (!access.isAuthenticated(request.headers.cookie)) {
         sendJson(response, 401, { error: 'Please unlock your workspace.' });
+        return;
+      }
+      if (request.method === 'GET' && pathname === '/api/sources') {
+        sendJson(response, 200, { sources: await sources.list() });
+        return;
+      }
+      if (request.method === 'POST' && pathname === '/api/sources/text') {
+        if (
+          request.headers['content-type']?.split(';')[0]?.trim() !==
+          'application/json'
+        ) {
+          throw new RequestError(415, 'Paste a text source using JSON.');
+        }
+        const buffer = await readLimitedBody(
+          request,
+          sourceLimits.textBodyBytes,
+        );
+        let input: unknown;
+        try {
+          input = JSON.parse(buffer.toString('utf8'));
+        } catch {
+          throw new RequestError(400, 'The text source is not valid JSON.');
+        }
+        sendJson(response, 201, await sources.addText(input));
+        return;
+      }
+      if (request.method === 'POST' && pathname === '/api/sources/pdf') {
+        if (request.headers['content-type'] !== 'application/pdf') {
+          throw new RequestError(
+            415,
+            'Choose a PDF file. Other file types are not supported.',
+          );
+        }
+        let fileName: string;
+        try {
+          fileName = decodeURIComponent(
+            String(request.headers['x-file-name'] ?? ''),
+          );
+        } catch {
+          throw new RequestError(400, 'The PDF filename is invalid.');
+        }
+        const buffer = await readLimitedBody(request, sourceLimits.pdfBytes);
+        sendJson(response, 201, await sources.addPdf(fileName, buffer));
+        return;
+      }
+      const sourceId = pathname.match(/^\/api\/sources\/([^/]+)$/)?.[1];
+      if (sourceId && request.method === 'GET') {
+        sendJson(response, 200, await sources.get(sourceId));
+        return;
+      }
+      if (sourceId && request.method === 'DELETE') {
+        await sources.remove(sourceId);
+        sendJson(response, 200, { deleted: true });
         return;
       }
       if (request.method === 'POST' && pathname === '/api/auth/logout') {

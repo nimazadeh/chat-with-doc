@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 import chromium from '@sparticuz/chromium';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { brotliDecompressSync } from 'node:zlib';
@@ -55,6 +55,7 @@ export default defineConfig({
     url: 'http://localhost:4173',
     reuseExistingServer: false,
     env: {
+      DATA_DIR: mkdtempSync(join(tmpdir(), 'folio-browser-data-')),
       ACCESS_CODE: '026491',
       PORT: '4173',
       APP_ORIGIN: 'http://localhost:4173',

@@ -14,7 +14,9 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
-  Terminal,
+  FileUp,
+  AlignLeft,
+  Trash2,
   X,
 } from 'lucide';
 
@@ -35,7 +37,9 @@ export function renderIcons(): void {
       Plus,
       ShieldCheck,
       Sparkles,
-      Terminal,
+      FileUp,
+      AlignLeft,
+      Trash2,
       X,
     },
     attrs: { 'stroke-width': 1.6, 'aria-hidden': 'true', focusable: 'false' },

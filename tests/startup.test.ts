@@ -7,6 +7,8 @@ test.each([
   { ACCESS_CODE: '1234567' },
   { ACCESS_CODE: '１２３４５６' },
   { ACCESS_CODE: '026491', PORT: 'oops' },
+  { ACCESS_CODE: '026491', DATA_DIR: 'dist/private-documents' },
+  { ACCESS_CODE: '026491', DATA_DIR: '.' },
   { ACCESS_CODE: '026491', APP_ORIGIN: 'http://public.example' },
   { ACCESS_CODE: '026491', APP_ORIGIN: 'https://example.com/path' },
 ])('server refuses unsafe startup configuration %#', (environment) => {

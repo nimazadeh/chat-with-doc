@@ -1,3 +1,5 @@
+import sourceDialogs from './source-dialogs.html?raw';
+import { mountSourceLibrary } from './source-library';
 import './styles.css';
 import { ApiError, requestJson } from './api';
 import { renderIcons } from './icons';
@@ -8,6 +10,7 @@ if (!root) {
   throw new Error('Application root is missing.');
 }
 const applicationRoot = root;
+let disposeLibrary: (() => void) | undefined;
 let expiryCheck: number | undefined;
 let unlockTimer: number | undefined;
 
@@ -20,6 +23,7 @@ function requireElement<T extends HTMLElement>(selector: string): T {
 }
 
 function showLogin(message = '', focus = false): void {
+  disposeLibrary?.();
   window.clearInterval(expiryCheck);
   window.clearTimeout(unlockTimer);
   // Only developer-owned templates enter innerHTML. Server and user text use textContent.
@@ -97,11 +101,15 @@ function showLogin(message = '', focus = false): void {
 }
 
 function showWorkspace(): void {
-  applicationRoot.innerHTML = workspaceView();
+  disposeLibrary?.();
+  applicationRoot.innerHTML = workspaceView() + sourceDialogs;
   applicationRoot.setAttribute('aria-busy', 'false');
   document.title = 'Folio — Personal workspace';
   renderIcons();
   requireElement('#workspace-title').focus();
+  disposeLibrary = mountSourceLibrary(applicationRoot, () =>
+    showLogin('Your session has ended. Unlock your workspace again.', true),
+  );
   const logout = requireElement<HTMLButtonElement>('#logout');
   logout.addEventListener('click', () => {
     logout.disabled = true;

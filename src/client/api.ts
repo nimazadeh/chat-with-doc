@@ -12,16 +12,22 @@ export class ApiError extends Error {
 export async function requestJson(
   path: string,
   body?: unknown,
+  options: RequestInit = {},
 ): Promise<unknown> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 12_000);
+  const timeout = window.setTimeout(() => controller.abort(), 30_000);
   try {
     const response = await fetch(path, {
-      method: body === undefined ? 'GET' : 'POST',
+      ...options,
+      method: options.method ?? (body === undefined ? 'GET' : 'POST'),
       credentials: 'same-origin',
       headers:
-        body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+        options.headers ??
+        (body === undefined
+          ? undefined
+          : { 'Content-Type': 'application/json' }),
+      body:
+        options.body ?? (body === undefined ? undefined : JSON.stringify(body)),
       signal: controller.signal,
     });
     if (!response.ok) {
