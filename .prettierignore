@@ -1,0 +1,8 @@
+node_modules
+dist
+.workspace
+.scratch
+report.md
+playwright-report
+test-results
+package-lock.json

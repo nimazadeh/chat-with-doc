@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2')
+    format('woff2');
+}
+
+:root {
+  --background: #101113;
+  --text: #eeeaf4;
+  --muted: #a29eac;
+  --accent: #ccbbf5;
+  --line: #ffffff0e;
+  --paper: #f7f5f9;
+  --ink: #302a36;
+  --font-sans:
+    'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
