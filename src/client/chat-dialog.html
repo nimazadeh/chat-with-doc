@@ -1,0 +1,103 @@
+<dialog id="learning-chat" class="chat-dialog" aria-labelledby="chat-title">
+  <div class="dialog-heading">
+    <div>
+      <p class="eyebrow">A little curiosity goes a long way</p>
+      <h2 id="chat-title">Ask about your source</h2>
+    </div>
+    <button id="close-chat" class="icon-button" aria-label="Close conversation">
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+  <p id="chat-source" class="source-hint" dir="auto"></p>
+  <p class="chat-disclosure">
+    Questions send your source, learning preferences and chat to your configured
+    AI provider. Verify AI answers against the source.
+  </p>
+  <p id="chat-provider" class="source-hint" role="status">
+    Checking AI configuration…
+  </p>
+  <details class="learning-preferences" id="learning-preferences">
+    <summary>Learning preferences</summary>
+    <div class="preferences-fields">
+      <label for="learning-goal">Learning goal</label>
+      <input
+        id="learning-goal"
+        form="chat-form"
+        maxlength="500"
+        dir="auto"
+        placeholder="What would you like to understand or do?"
+        aria-describedby="goal-hint"
+      />
+      <p id="goal-hint" class="source-hint">
+        Optional · up to 500 characters. Shared with your AI provider.
+      </p>
+      <label for="learning-level">Familiarity</label>
+      <select id="learning-level" form="chat-form">
+        <option value="beginner">Beginner — start with the foundations</option>
+        <option value="familiar">Familiar — I know the basics</option>
+        <option value="advanced">
+          Advanced — focus on depth and edge cases
+        </option>
+      </select>
+    </div>
+  </details>
+  <div
+    id="chat-messages"
+    tabindex="0"
+    class="chat-messages"
+    role="log"
+    aria-label="Conversation"
+    aria-live="polite"
+  ></div>
+  <form id="chat-form" novalidate>
+    <div class="learning-mode">
+      <label for="response-mode">Response mode</label>
+      <select id="response-mode" aria-describedby="mode-hint">
+        <option value="explain">Explain step by step</option>
+        <option value="simplify">Make it simpler</option>
+        <option value="practice">Give me a practice question</option>
+        <option value="feedback">Feedback on my attempt</option>
+      </select>
+    </div>
+    <p id="mode-hint" class="source-hint">
+      One concept, an example and a small understanding check.
+    </p>
+    <label for="chat-question">Your question or answer</label>
+    <textarea
+      id="chat-question"
+      dir="auto"
+      maxlength="4000"
+      placeholder="What would you like to understand?"
+      aria-describedby="chat-limits"
+    ></textarea>
+    <p id="chat-limits" class="source-hint">
+      Up to 4,000 characters per question · sources up to 24,000 characters.
+      Longer sources aren’t truncated.
+    </p>
+    <label class="chat-consent"
+      ><input id="chat-consent" type="checkbox" />
+      <span
+        >I agree to send this source and conversation to my configured AI
+        provider.</span
+      ></label
+    >
+    <div class="chat-actions">
+      <button type="submit" id="send-question" class="button button-primary">
+        <span id="chat-send-label">Send question</span>
+        <i data-lucide="arrow-right"></i>
+      </button>
+      <button type="button" id="cancel-question" class="button" hidden>
+        Cancel generation
+      </button>
+      <button type="button" id="new-conversation" class="button">
+        New conversation
+      </button>
+    </div>
+  </form>
+  <p id="chat-status" class="source-hint" role="status"></p>
+  <p id="chat-error" class="form-error" role="alert"></p>
+  <p class="source-hint chat-footnote">
+    Not saved yet. Closing or reloading clears this conversation. Cancelled
+    generations may still incur provider usage.
+  </p>
+</dialog>

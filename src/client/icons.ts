@@ -1,0 +1,47 @@
+import {
+  createIcons,
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  Check,
+  ChevronRight,
+  CircleHelp,
+  FileText,
+  Fingerprint,
+  Layers,
+  LockKeyhole,
+  LogOut,
+  Plus,
+  ShieldCheck,
+  Sparkles,
+  FileUp,
+  AlignLeft,
+  Trash2,
+  X,
+} from 'lucide';
+
+export function renderIcons(): void {
+  createIcons({
+    icons: {
+      ArrowRight,
+      ArrowUpRight,
+      BookOpen,
+      Check,
+      ChevronRight,
+      CircleHelp,
+      FileText,
+      Fingerprint,
+      Layers,
+      LockKeyhole,
+      LogOut,
+      Plus,
+      ShieldCheck,
+      Sparkles,
+      FileUp,
+      AlignLeft,
+      Trash2,
+      X,
+    },
+    attrs: { 'stroke-width': 1.6, 'aria-hidden': 'true', focusable: 'false' },
+  });
+}

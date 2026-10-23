@@ -1,0 +1,141 @@
+<dialog id="source-import" class="source-dialog" aria-labelledby="import-title">
+  <div class="dialog-heading">
+    <div>
+      <p class="dialog-eyebrow">MAKE ROOM FOR A NEW IDEA</p>
+      <h2 id="import-title">Add a learning source</h2>
+    </div>
+    <button
+      class="icon-button"
+      data-close-dialog
+      aria-label="Close source form"
+    >
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+  <p>Bring your material. We’ll keep it in your local library.</p>
+  <div class="import-tabs" role="tablist" aria-label="Source type">
+    <button
+      type="button"
+      role="tab"
+      id="pdf-tab"
+      aria-controls="pdf-panel"
+      aria-selected="true"
+    >
+      <i data-lucide="file-text"></i> Upload PDF
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="text-tab"
+      aria-controls="text-panel"
+      aria-selected="false"
+      tabindex="-1"
+    >
+      <i data-lucide="align-left"></i> Paste text
+    </button>
+  </div>
+  <div id="pdf-panel" role="tabpanel" aria-labelledby="pdf-tab">
+    <form id="pdf-form" novalidate>
+      <label for="pdf-file">Text-based PDF</label>
+      <div class="file-area">
+        <i data-lucide="file-up"></i>
+        <p>A fresh perspective starts here.</p>
+        <input
+          type="file"
+          id="pdf-file"
+          accept="application/pdf,.pdf"
+          required
+          aria-describedby="pdf-hint"
+        />
+      </div>
+      <p id="pdf-hint" class="source-hint">
+        Up to 10 MiB · 200 pages · 200,000 extracted characters. Scans and
+        password-protected files aren’t supported.
+      </p>
+      <button type="submit" class="button button-primary">
+        Save PDF source <i data-lucide="arrow-right"></i>
+      </button>
+    </form>
+  </div>
+  <div id="text-panel" role="tabpanel" aria-labelledby="text-tab" hidden>
+    <form id="text-form" novalidate>
+      <label for="source-title">Source title</label
+      ><input
+        id="source-title"
+        maxlength="120"
+        required
+        placeholder="e.g. Understanding JavaScript closures"
+      />
+      <label for="source-text">Educational text</label
+      ><textarea
+        id="source-text"
+        dir="auto"
+        maxlength="200000"
+        required
+        placeholder="Paste an article, notes, or a chapter you want to understand…"
+        aria-describedby="text-hint"
+      ></textarea>
+      <p id="text-hint" class="source-hint">
+        Up to 200,000 characters. Code and markup are saved as plain text.
+      </p>
+      <button type="submit" class="button button-primary">
+        Save text source <i data-lucide="arrow-right"></i>
+      </button>
+    </form>
+  </div>
+  <p id="import-error" class="form-error" role="alert"></p>
+  <p id="import-status" class="source-hint" role="status"></p>
+  <p class="local-note">
+    <i data-lucide="shield-check"></i> Only extracted text is stored locally.
+    The original PDF is not retained. Importing does not send content to an AI
+    provider. Asking a question does.
+  </p>
+</dialog>
+<dialog
+  id="source-preview"
+  class="preview-dialog"
+  aria-labelledby="preview-title"
+>
+  <div class="dialog-heading">
+    <h2 id="preview-title" dir="auto"></h2>
+    <button
+      class="icon-button"
+      data-close-dialog
+      aria-label="Close source preview"
+    >
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+  <p id="preview-meta" class="source-hint"></p>
+  <div id="preview-pages"></div>
+  <div class="preview-footer">
+    <button id="ask-source" class="button button-primary" disabled>
+      Ask about this source
+    </button>
+    <span>Extracted text · not an AI explanation</span
+    ><button id="delete-source" class="button button-danger">
+      <i data-lucide="trash-2"></i> Delete source
+    </button>
+  </div>
+  <p id="preview-error" class="form-error" role="alert"></p>
+</dialog>
+<dialog id="source-delete" aria-labelledby="delete-title">
+  <div class="dialog-heading">
+    <h2 id="delete-title">Delete this source?</h2>
+    <button class="icon-button" data-close-dialog aria-label="Cancel deletion">
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+  <p>
+    The extracted text and page references will be permanently removed from this
+    device. There are no linked learning sessions in this version. This cannot
+    be undone.
+  </p>
+  <div class="delete-actions">
+    <button id="cancel-delete" class="button">Keep source</button
+    ><button id="confirm-delete" class="button button-danger">
+      Delete permanently
+    </button>
+  </div>
+  <p id="delete-error" class="form-error" role="alert"></p>
+</dialog>
